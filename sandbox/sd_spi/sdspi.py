@@ -5,7 +5,7 @@
 import os, sdcard, machine
 
 def sdtest1():
-    # spi = machine.SPI(1, sck=machine.Pin(10), mosi=machine.Pin(11), miso=machine.Pin(12))
+    spi = machine.SPI(1, sck=machine.Pin(10), mosi=machine.Pin(11), miso=machine.Pin(12))
     spi = machine.SPI(1)
     cs = machine.Pin(15)
     

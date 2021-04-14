@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from typing import Any, Iterator, List, Tuple
+from typing import Any, Iterator, List, Tuple, overload
 
 sep: str = ...
 
@@ -82,6 +82,8 @@ def mkdir(path: str) -> None:
     """
     ...
 
+
+
 def mount(fsobj, mount_point, *, readonly) -> None:
     """
     Mount the filesystem object *fsobj* at the location in the VFS given by the
@@ -98,6 +100,9 @@ def mount(fsobj, mount_point, *, readonly) -> None:
 
     Will raise ``OSError(EPERM)`` if *mount_point* is already mounted.
     """
+    ...
+@overload
+def mount(fsobj, mount_point) -> None:
     ...
 
 def remove(path: str) -> None:
@@ -179,5 +184,14 @@ def uname() -> Tuple:
     :return: Tuple with information about the machine or operating system.
     """
     ...
+
+class VfsFat(Any):
+    def __init__(self, block_dev: Any):
+        pass
+    
+    @staticmethod
+    def mkfs(block_dev):
+        pass
+    
 
 

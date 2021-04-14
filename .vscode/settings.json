@@ -6,6 +6,7 @@
     "python.languageServer": "Pylance",
     "python.analysis.typeCheckingMode": "basic",
     "python.analysis.extraPaths": [
-        ".vscode\\Pico-Stub\\stubs"
+        ".vscode\\Pico-Stub\\stubs",
+        "${workspaceFolder}\\libs\\rp2"
     ]
 }
