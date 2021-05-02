@@ -6,20 +6,32 @@ import micropython
 micropython.alloc_emergency_exception_buf(100)
 
 class Counter:
-    def __init__(self, pin, sampling_frequency=1):
+    def __init__(self, pin, sampling_frequency=1, use_soft_interrupt_irq=False, use_soft_interrupt_timer=True):
+        """
+        Scheduler is used for soft IRQ, unfortunately, on rp2 the deph is set to 8
+        which appears to make lose signals
+        """
+        
         # Initialise rising edge detection
         self.counter = 0
         self.pin = pin
         self.sig_handler = self.sig_secondary_handler
         pin.init(machine.Pin.IN, machine.Pin.PULL_DOWN)
-        pin.irq(trigger=machine.Pin.IRQ_RISING, handler=self.sig_primary_handler)
+        if use_soft_interrupt_irq:
+            pin.irq(trigger=machine.Pin.IRQ_RISING, handler=self.sig_primary_handler)
+        else:
+            pin.irq(trigger=machine.Pin.IRQ_RISING, handler=self.sig_handler)
         
         # Initialise timer interrupt for signal frequency computation
         self.signal_frequency = 0
         self.sampling_frequency = sampling_frequency
         self.timer_handler = self.timer_secondary_handler    
         self.timer_device = machine.Timer()
-        self.timer_device.init(freq = self.sampling_frequency, mode=machine.Timer.PERIODIC, callback = self.timer_primary_handler)
+        if use_soft_interrupt_timer:
+            self.timer_device.init(freq = self.sampling_frequency, mode=machine.Timer.PERIODIC, callback = self.timer_primary_handler)
+        else:
+            self.timer_device.init(freq = self.sampling_frequency, mode=machine.Timer.PERIODIC, callback = self.timer_handler)
+        
         
     def sig_primary_handler(self, p):
         """
@@ -53,7 +65,7 @@ class Counter:
         
 if __name__=="__main__":
     # Watch pin 20 for rizing edge
-    pin = machine.Pin(20)
+    pin = machine.Pin(1)
     # Compute signal frequency once per seconde (1hz)
     freq= 1
     #Create counter
