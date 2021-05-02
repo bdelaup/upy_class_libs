@@ -83,4 +83,16 @@ class Stepper():
         self.pin2.write_digital(0)
         self.pin3.write_digital(0)
         self.pin4.write_digital(0)
+        
+if __name__=="__main__":
+    # Create a stepper using the HALF_STEP command sequence 
+    # to a stepper which is connected:
+    #                     micro:bit    ULN2003
+    #                     pin16     -> INP1 
+    #                     pin15     -> INP2
+    #                     pin14     -> INP3
+    #                     pin13     -> INP4
+    # Set the delay between steps to 5 microseconds
 
+    s1 = Stepper(FULL_STEP, microbit.pin16, microbit.pin15, microbit.pin14, microbit.pin13, delay=10)  
+    s1.step(100)     # Rotate 100 steps clockwise
