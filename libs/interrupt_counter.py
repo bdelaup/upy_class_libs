@@ -65,7 +65,7 @@ class Counter:
         
 if __name__=="__main__":
     # Watch pin 20 for rizing edge
-    pin = machine.Pin(1)
+    pin = machine.Pin(20)
     # Compute signal frequency once per seconde (1hz)
     freq= 1
     #Create counter
