@@ -94,5 +94,5 @@ if __name__=="__main__":
     #                     pin13     -> INP4
     # Set the delay between steps to 5 microseconds
 
-    s1 = Stepper(FULL_STEP, microbit.pin16, microbit.pin15, microbit.pin14, microbit.pin13, delay=10)  
-    s1.step(100)     # Rotate 100 steps clockwise
+    s1 = Stepper(FULL_STEP, microbit.pin16, microbit.pin15, microbit.pin14, microbit.pin13, delay=5)  
+    s1.step(250)     # Rotate 100 steps clockwise

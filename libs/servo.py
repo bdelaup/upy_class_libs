@@ -43,7 +43,17 @@ def tests():
     servo.set_angle(180)
     assert pin.analog == 204
 
+def test_microbit():
+    from microbit import pin2, sleep
+    servo = Servo(pin=pin2)
+    while (True):
+        servo.set_angle(30)
+        sleep(1)
+        servo.set_angle(90)
+        sleep(1)
+    
 
 if __name__ == "__main__":
-    tests()
+    #tests()
+    test_microbit()
     

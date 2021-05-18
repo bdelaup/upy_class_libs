@@ -8,7 +8,8 @@ SENSOR_LIST = {
     0x1e : "micro:bit Magnetometer", 
     0x3e : "Grove LCD-data", 
     0x62 : "Grove LCD-RGB", 
-    0x50 : " GrovePulsation"
+    0x50 : "Grove Pulsation",
+    0x68 : "Gyro grove MPU9250"
     }
 def scan_i2c_sensors():
     for address in i2c.scan():
