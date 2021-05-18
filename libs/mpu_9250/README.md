@@ -74,4 +74,4 @@ def __init__(self,
 
 # Licence
 (c) B. Delaup
-Licence MIT
+Licence GPL 3.0
