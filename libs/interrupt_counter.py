@@ -6,7 +6,7 @@ import micropython
 micropython.alloc_emergency_exception_buf(100)
 
 class Counter:
-    def __init__(self, pin, sampling_frequency=1, use_soft_interrupt_irq=False, use_soft_interrupt_timer=True):
+    def __init__(self, pin, sampling_frequency=1, use_soft_interrupt_irq=False, use_soft_interrupt_timer=True, sig_trigger=machine.Pin.IRQ_RISING, pull_r=None):
         """
         Scheduler is used for soft IRQ, unfortunately, on rp2 the deph is set to 8
         which appears to make lose signals
@@ -16,11 +16,11 @@ class Counter:
         self.counter = 0
         self.pin = pin
         self.sig_handler = self.sig_secondary_handler
-        pin.init(machine.Pin.IN, machine.Pin.PULL_DOWN)
+        pin.init(machine.Pin.IN, pull_r)
         if use_soft_interrupt_irq:
-            pin.irq(trigger=machine.Pin.IRQ_RISING, handler=self.sig_primary_handler)
+            pin.irq(trigger=sig_trigger, handler=self.sig_primary_handler)
         else:
-            pin.irq(trigger=machine.Pin.IRQ_RISING, handler=self.sig_handler)
+            pin.irq(trigger=sig_trigger, handler=self.sig_handler)
         
         # Initialise timer interrupt for signal frequency computation
         self.signal_frequency = 0
@@ -63,8 +63,8 @@ class Counter:
     def get_signal_frequency(self):
         return self.signal_frequency
         
-if __name__=="__main__":
-    # Watch pin 20 for rizing edge
+def test_btn():
+    # Watch pin 20 for rizing edge button
     pin = machine.Pin(20)
     # Compute signal frequency once per seconde (1hz)
     freq= 1
@@ -73,3 +73,20 @@ if __name__=="__main__":
     while (True):
         print ("Compteur : ", cnt.get_counter(), " frequency : ", cnt.get_signal_frequency())
         time.sleep(1)
+
+def test_geiger():
+    TUBE_FACTOR_INDEX = const(151)
+    # Watch pin 6 for rizing edge btn
+    pin = machine.Pin(6)
+    # Compute signal frequency once per seconde (1hz)
+    freq= 1/12
+    #Create counter
+    cnt = Counter(pin, freq)
+    while (True):
+        print (cnt.get_counter(), " ticks", cnt.get_signal_frequency()/freq/TUBE_FACTOR_INDEX, "uScv")
+        time.sleep(1)
+
+
+if __name__=="__main__":
+    #test_btn()
+    test_geiger()
