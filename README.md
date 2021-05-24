@@ -1,2 +1,3 @@
 # Microclass
-Usefull wrappers to ease use of technical components in classrooms.
+
+A few library files for micropython to use in high school engineering classrooms.

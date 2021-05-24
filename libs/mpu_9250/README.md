@@ -1,122 +1,77 @@
-# MicroPython MPU-9250 (MPU-6500 + AK8963) I2C driver
+# Purpose 
+This an wrapper of the mpu_9250 driver available here [micropython-mpu9250](https://github.com/tuupola/micropython-mpu9250) by tuupola
+Designed for educational purpose only
 
-MPU-9250 is a System in Package (SiP) which combines two chips: MPU-6500 which contains 3-axis gyroscope and 3-axis accelerometer and an AK8963 which is a 3-axis digital compass.
-
-## Usage
-
-Simple test with never ending loop.
-
-```python
-import utime
-from machine import I2C, Pin
-from mpu9250 import MPU9250
-
-i2c = I2C(scl=Pin(22), sda=Pin(21))
-sensor = MPU9250(i2c)
-
-print("MPU9250 id: " + hex(sensor.whoami))
-
-while True:
-    print(sensor.acceleration)
-    print(sensor.gyro)
-    print(sensor.magnetic)
-    print(sensor.temperature)
-
-    utime.sleep_ms(1000)
-```
-
-By default the library returns 3-tuple of X, Y, Z axis values for either acceleration, gyroscope and magnetometer ie compass. Default units are `m/s^2`, `rad/s`, `uT` and `°C`. It is possible to also get acceleration values in `g` and gyro values `deg/s`. See the example below. Note that both the MPU6500 and the AK8963 drivers are available as separate classes. MPU9250 is actually a composite of those two.
+# Usage
+## Basics
 
 ```python
-import utime
-from machine import I2C, Pin
-from mpu9250 import MPU9250
-from mpu6500 import MPU6500, SF_G, SF_DEG_S
-
-i2c = I2C(scl=Pin(22), sda=Pin(21))
-mpu6500 = MPU6500(i2c, accel_sf=SF_G, gyro_sf=SF_DEG_S)
-sensor = MPU9250(i2c, mpu6500=mpu6500)
-
-print("MPU9250 id: " + hex(sensor.whoami))
-
-while True:
-    print(sensor.acceleration)
-    print(sensor.gyro)
-    print(sensor.magnetic)
-    print(sensor.temperature)
-
-    utime.sleep_ms(1000)
+from mpu import MPU
+if __name__ == "__main__":
+    i2c = I2C(id=1, scl=Pin(27), sda=Pin(26))
+    mpu = MPU(i2c)
+    while(True):
+        print ("Acceleration :", mpu.acceleration_x, mpu.acceleration_y, mpu.acceleration_z)
+        print ("Giroscope :", mpu.giro_x, mpu.giro_y, mpu.giro_z)
+        print ("Temperature :", mpu.temperature)
+        print ("")
+        time.sleep_ms(1000)
+        
 ```
 
-More realistic example usage with timer. If you get `OSError: 26` or `i2c driver install error` after soft reboot do a hard reboot.
-
+## Calibration
+Calibration value can be obtained by calling de calibration method
 ```python
-import micropython
-from machine import I2C, Pin, Timer
-from mpu9250 import MPU9250
-
-micropython.alloc_emergency_exception_buf(100)
-
-i2c = I2C(scl=Pin(22), sda=Pin(21))
-sensor = MPU9250(i2c)
-
-def read_sensor(timer):
-    print(sensor.acceleration)
-    print(sensor.gyro)
-    print(sensor.magnetic)
-    print(sensor.temperature)
-
-print("MPU9250 id: " + hex(sensor.whoami))
-
-timer_0 = Timer(0)
-timer_0.init(period=1000, mode=Timer.PERIODIC, callback=read_sensor)
+from mpu import MPU
+if __name__ == "__main__":
+    i2c = I2C(id=1, scl=Pin(27), sda=Pin(26))
+    mpu = MPU(i2c)
+    mpu.calibrate()       
 ```
 
-## Magnetometer Calibration
-
-For real life applications you should almost always [calibrate the magnetometer](https://appelsiini.net/2018/calibrate-magnetometer/). The AK8963 driver supports both hard and soft iron correction. Calibration function takes two parameters: `count` is the number of samples to collect and `delay` is the delay in millisecods between the samples.
-
-With the default values of `256` and `200` calibration takes aproximately one minute. While calibration function is running the sensor should be rotated multiple times around each axis.
-
-NOTE! If using MPU9250 you will first need to open the I2C bypass access to AK8963. This is not needed when using a standalone AK8963 sensor.
-
+Then calibration values can passed as arguments to MPU constructor
 ```python
-from machine import I2C, Pin
-from mpu9250 import MPU9250
-from ak8963 import AK8963
-
-i2c = I2C(scl=Pin(22), sda=Pin(21))
-
-dummy = MPU9250(i2c) # this opens the bybass to access to the AK8963
-ak8963 = AK8963(i2c)
-offset, scale = ak8963.calibrate(count=256, delay=200)
-
-sensor = MPU9250(i2c, ak8963=ak8963)
+i2c = I2C(id=1, scl=Pin(27), sda=Pin(26),                  
+        offset_default=( 0 , 0 , 0 ), # replace by values obtained using calibration method
+        scale_default=( 1 , 1 , 1 )) # replace by values obtained using calibration method
 ```
 
-After finishing calibration the `calibrate()` method also returns tuples for both hard iron `offset` and soft iron `scale`. To avoid calibrating after each startup it would make sense to strore these values in NVRAM or config file and pass them to the AK8963 constructor. Below example only illustrates how to use the constructor.
-
+## Advanced
+Constructor options and defaults are
 ```python
-from machine import I2C, Pin
-from mpu9250 import MPU9250
-from ak8963 import AK8963
+def __init__(self,
+             i2c,
+             accel_scale_factor=SF_G,     accel_func_scale=ACCEL_FS_SEL_2G,
+             gyro_scale_factor=SF_DEG_S,  gyro_func_scale=GYRO_FS_SEL_250DPS,
+             offset_default=( 0 , 0 , 0 ),
+             scale_default=( 1 , 1 , 1 )
+             ):
+    """ SF scale factor -> facteur de mise à l'échelle (unites)
+        accel_scale_factor : 
+            SF_G = 1
+            SF_M_S2 = 9.80665 # 1 g = 9.80665 m/s2 ie. standard gravity
 
-i2c = I2C(scl=Pin(22), sda=Pin(21))
-dummy = MPU9250(i2c) # this opens the bybass to access to the AK8963
+        gyro_scale_factor : 
+            SF_DEG_S = 1
+            SF_RAD_S = 0.017453292519943 # 1 deg/s is 0.017453292519943 rad/s
 
-ak8963 = AK8963(
-    i2c,
-    offset=(-136.8931640625, -160.482421875, 59.02880859375),
-    scale=(1.18437220840483, 0.923895823933424, 0.931707933618979)
-)
+        FS functionning scale : plage de mesure
+        gyro_func_scale :
+            ACCEL_FS_SEL_2G 
+            ACCEL_FS_SEL_4G 
+            ACCEL_FS_SEL_8G 
+            ACCEL_FS_SEL_16G
 
-sensor = MPU9250(i2c, ak8963=ak8963)
+        gyro_func_scale (deg/s):
+            GYRO_FS_SEL_250DPS 
+            GYRO_FS_SEL_500DPS 
+            GYRO_FS_SEL_1000DPS
+            GYRO_FS_SEL_2000DPS
+
+        offset_default, offset_default : obtenu par la calibration
+    """       
 ```
 
-## Gyro Calibration
-
-TODO
-
-## License
-
-The MIT License (MIT). Please see [License File](LICENSE.txt) for more information.
+# Licence
+(c) B. Delaup
+Licence GPL 3.0
