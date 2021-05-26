@@ -1,3 +1,6 @@
+# (c) Benoit Delaup 2021
+# Creative common
+
 import machine
 import time
 import micropython

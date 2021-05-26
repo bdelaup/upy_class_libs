@@ -6,10 +6,10 @@ from mpu6500 import ACCEL_FS_SEL_2G, ACCEL_FS_SEL_4G, ACCEL_FS_SEL_8G, ACCEL_FS_
 from mpu6500 import GYRO_FS_SEL_250DPS, GYRO_FS_SEL_500DPS, GYRO_FS_SEL_1000DPS, GYRO_FS_SEL_2000DPS
 from ak8963 import AK8963
 
-i2c = I2C(id=1, scl=Pin(27), sda=Pin(26))
+# i2c = I2C(id=1, scl=Pin(27), sda=Pin(26))
 
-mpu6500 = MPU6500(i2c, accel_sf=SF_G, gyro_sf=SF_DEG_S)
-sensor = MPU9250(i2c, mpu6500=mpu6500)    
+# mpu6500 = MPU6500(i2c, accel_sf=SF_G, gyro_sf=SF_DEG_S)
+# sensor = MPU9250(i2c, mpu6500=mpu6500)    
     
 class MPU:
     def __init__(self,
