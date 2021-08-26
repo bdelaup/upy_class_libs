@@ -1,83 +1,70 @@
-from utime import sleep_ms
-import machine
-import micropython
+from utime import sleep_ms, ticks_add
+from machine import Pin
+from machine import Timer
+from time import ticks_ms, ticks_diff
 
-# Allocate memory for the case of an exception was rised in an IRQ
-micropython.alloc_emergency_exception_buf(100)
+from encoder import Encoder
+from motor import Motor
+from pid import Filter
+from setpoint_generator import generate_plateau, generate_ramp
 
-class SoftEncoder:
-    def __init__(self, reverse_direction = False):
-        self._counter = 0
-        if reverse_direction:
-            self._dir = -1
-        else:
-            self._dir = 1
+class Controler:
+    def __init__(self, encoder, motor, pid):
+        self._enc = encoder
+        self._pid = pid
+        self._mot = motor
 
-    @property
-    def counter(self):
-        return self._counter 
+        self._duration_timer = Timer()
     
-    def update(self, channel_a, channel_b):
-        if channel_b == 0:
-            self._counter -= self._dir        
-        else :
-            self._counter += self._dir
+    def position_loop(self, set_point_generator):
+        ticks_start = ticks_ms()
 
-class Encoder:
-    """
-    Scheduler is used for soft IRQ, unfortunately, on rp2 the deph is set to 8
-    which appears to make lose signals
-    """
-    def __init__(self, pin_channel_a, pin_channel_b, reverse_direction = False, use_soft_interrupt_irq=False, sig_trigger=machine.Pin.IRQ_RISING, pull_r=None):
-        # Initialise rising edge detection
-        self._encoder = SoftEncoder(reverse_direction)
-
-        self._pin_channel_a = pin_channel_a
-        self._pin_channel_a.init(machine.Pin.IN, pull_r)
-
-        self._pin_channel_b = pin_channel_b
-        self._pin_channel_b.init(machine.Pin.IN)
-        
-        if use_soft_interrupt_irq:
-            self._pin_channel_a.irq(trigger=sig_trigger, handler=self.signal_soft_handler)
-        else:
-            self._pin_channel_a.irq(trigger=sig_trigger, handler=self.signal_handler)
-                
-        
-    def signal_soft_handler(self, p):
-        """
-        First called by interrupt, then schedule the interrupt handler
-        asap to avoid allocation problem in IRQ
-        """ 
-        micropython.schedule(self.signal_handler, None)
+        #dry run
+        t =  (ticks_ms() - ticks_start) / 1000 # ms -> s
+        self._pid.set_point = set_point_generator(t)
+        position = self._enc.counter
+        self._pid.update(t, position)
     
-    def signal_handler(self, p):
-        """ Actual implementation of interupt routine"""
-        self._encoder.update(1, self._pin_channel_b.value())
+        
+        while(self._pid.set_point != None):
+            t =  (ticks_ms() - ticks_start) / 1000 # ms -> s
+            self._pid.set_point = set_point_generator(t)
 
-    @property
-    def counter(self):
-        return self._encoder.counter    
+            position = self._enc.counter
+            self._pid.update(t, position)
+            cmd = self._pid.generate_driving_value()
 
-def test_soft_encoder():
-    encoder = SoftEncoder()
-    encoder.update(0,1)
-    encoder.update(0,1)
-    encoder.update(0,1)
-    assert(encoder.counter == 3)
-    encoder.update(0,0)
-    assert(encoder.counter == 2)
-    print("Success")
+            if cmd >= 0:
+                self._mot.on(Motor.MotorDirection.FORWARD, cmd)
+            else :
+                self._mot.on(Motor.MotorDirection.REVERSE, abs(cmd))
+            
+            sleep_ms(1)
 
-def test_encoder():
-    pin_channnel_a=machine.Pin(27)
-    pin_channnel_b=machine.Pin(26)
-    encoder = Encoder(pin_channnel_a, pin_channnel_b)
 
-    while True:
-        print(encoder.counter)
-        sleep_ms(100)
+def test_asservissement():
+    pin_ch_a = Pin(27)
+    pin_ch_b = Pin(26)
+    encoder = Encoder(pin_ch_a, pin_ch_b)
 
-if __name__=="__main__":
-    test_soft_encoder()
-    #test_encoder()
+    pin_dir = Pin(8)
+    pin_speed = Pin(9)
+    motor = Motor(pin_dir, pin_speed)
+
+    Kp = 3
+    Ki = 0
+    Kd = 0
+    filter = Filter(Kp, Ki, Kd)
+
+    controler = Controler(encoder, motor, filter)
+
+    ramp_inc = generate_ramp(0, 10, 4)
+    plateau = generate_plateau(40,2)
+    ramp_dec = generate_ramp(40, -10, 4)
+
+    controler.position_loop(ramp_inc)
+    controler.position_loop(plateau)
+    controler.position_loop(ramp_dec)
+
+if __name__ == "__main__":
+    test_asservissement()
