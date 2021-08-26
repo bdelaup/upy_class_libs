@@ -43,20 +43,23 @@ class Motor:
             
         if self._dir == self.MotorDirection.FORWARD:
             self._pin_dir.on()
-            print ("forward")
+            #print ("forward")
         else:
             self._pin_dir.off()
-            print ("reverse")
+            #print ("reverse")
 
 
     def set_speed(self, duty):
         if duty < 0 or duty > 100:
             return
+        #print (duty)
+        #print (duty/100)
         duty = round(duty/100 * self._duty_ratio)
-        print (duty)
+        #print (duty)
         self._pwm.duty_u16(duty)
 
     def on(self, direction, duty):
+        #print (duty)
         self.set_direction(direction)
         self.set_speed(duty)
 
