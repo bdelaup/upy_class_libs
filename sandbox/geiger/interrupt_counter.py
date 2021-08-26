@@ -1,6 +1,3 @@
-# (c) Benoit Delaup 2021
-# Creative common
-
 import machine
 import time
 import micropython
@@ -78,7 +75,7 @@ def test_btn():
         time.sleep(1)
 
 def test_geiger():
-    TUBE_FACTOR_INDEX = 151
+    TUBE_FACTOR_INDEX = const(151)
     # Watch pin 6 for rizing edge btn
     pin = machine.Pin(6)
     # Compute signal frequency once per seconde (1hz)
