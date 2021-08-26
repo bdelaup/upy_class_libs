@@ -11,6 +11,7 @@ def tests():
     assert interpolate(12, [10, 20], [10, 40]) == 16
     assert interpolate(12, [10, 20], [20, 40]) == 24
     assert interpolate(15, [10, 20], [0, 40]) == 20
+    print("SUCCESS")
     
 if __name__ == "__main__":
     tests()
