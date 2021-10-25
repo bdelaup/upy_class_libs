@@ -2,9 +2,9 @@
 from microbit import *
 import time
 
-class afficheur_lcd():
+class lcd_display():
     """Grove LCD display over I2C"""
-    def __init__(self, delay=10, debug=False, rgb = False):
+    def __init__(self, delay=0, debug=False, rgb = False):
         self._delay = delay
         self._debug = debug
         self._rgb = rgb

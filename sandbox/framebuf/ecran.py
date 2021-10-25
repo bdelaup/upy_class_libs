@@ -4,10 +4,9 @@ import time
 
 class afficheur_lcd():
     """Grove LCD display over I2C"""
-    def __init__(self, delay=10, debug=False, rgb = False):
+    def __init__(self, delay=10, debug=False):
         self._delay = delay
         self._debug = debug
-        self._rgb = rgb
         self.set_register(0x00, 0)
         self.set_register(0x01, 0)
         self.set_register(0x08, 0xAA)
@@ -36,10 +35,9 @@ class afficheur_lcd():
             print("[debug] Ecran : initialisation terminee")
 
     def set_register(self, reg, val):
-        if self._rgb :
-            val = bytes((reg, val))
-            i2c.write(0x62, val)
-            time.sleep_ms(self._delay)
+        val = bytes((reg, val))
+        i2c.write(0x62, val)
+        time.sleep_ms(self._delay)
 
 
     def color(self, r, g, b):
