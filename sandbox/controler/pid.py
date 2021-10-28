@@ -48,27 +48,29 @@ class Filter:
         
 
     def update(self, date:int, value)->None:
+        
         epsilon = self._set_point-value
 
         # P
         self._proportional = self._kp * epsilon
 
-        # I
-        self._integral_accumulator = self._integral_accumulator + epsilon * (date - self._last_date)
-        self._integral = self._ki * self._integral_accumulator 
-        
-        # D
-        if date != self._last_date:
-            self._derivative = self._kd * (epsilon - self._last_epsilon) / (date - self._last_date)
+#         # I
+#         self._integral_accumulator = self._integral_accumulator + epsilon * (date - self._last_date)
+#         self._integral = self._ki * self._integral_accumulator 
+#         
+#         # D
+#         if date != self._last_date:
+#             self._derivative = self._kd * (epsilon - self._last_epsilon) / (date - self._last_date)
 
         self._last_date=date
         self._last_epsilon=epsilon
+#         print ("Consigne : ", self._set_point, "Position : ", value, "Epsi : ", epsilon, "P : ", self._proportional)
 
     def get_driving_parameters(self):
         return (self._proportional, self._integral, self._derivative)
 
     def get_driving_value(self):
-        return self._proportional + self._integral + self._derivative
+        return self._proportional #+ self._integral + self._derivative
 
 
 def test_filter_p():

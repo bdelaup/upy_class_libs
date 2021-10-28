@@ -69,9 +69,17 @@ def test_soft_encoder():
     assert(encoder.counter == 2)
     print("Success")
 
-def test_encoder():
+def test_encoder1():
     pin_channnel_a=machine.Pin(27)
     pin_channnel_b=machine.Pin(26)
+    encoder = Encoder(pin_channnel_a, pin_channnel_b)
+
+    while True:
+        print(encoder.counter)
+        sleep_ms(100)
+def test_encoder2():
+    pin_channnel_a=machine.Pin(18)
+    pin_channnel_b=machine.Pin(19)
     encoder = Encoder(pin_channnel_a, pin_channnel_b)
 
     while True:
@@ -80,4 +88,5 @@ def test_encoder():
 
 if __name__=="__main__":
     test_soft_encoder()
-    #test_encoder()
+#     test_encoder1()
+    test_encoder2()

@@ -8,7 +8,7 @@ def generate_ramp(initial_position, rate, duration):
         if time > duration:
             return None
         else:
-            return  round(rate * time + initial_position)
+            return  rate * time + initial_position
 
     return lambda t : ramp(t)
 
@@ -19,7 +19,7 @@ def generate_plateau(initial_position, duration):
         if time > duration:
             return None
         else:
-            return  round(initial_position)
+            return  initial_position
 
     return lambda t : plateau(t)
 
