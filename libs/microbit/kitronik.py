@@ -1,8 +1,10 @@
 
-# from micropbit import *
-from lycee_utils.py import *
+from microbit import *
+# from lycee_utils.py import *
+
 class KitronikMotorDriver :
-     class MotorDirection(enumerate) :
+    
+    class MotorDirection(enumerate) :
         Forward = 1
         Reverse = 2
 
@@ -10,57 +12,49 @@ class KitronikMotorDriver :
         Motor1 = 1
         Motor2 = 2
 
-    def motorOn(self, motor, direction, speed):
-        self.MotorDirection.Forward
+    def __init__(self, pin_ch_A, pin_ch_B, scale=1024, direction = MotorDirection.Forward) -> None:
+        if direction == self.MotorDirection.Forward:
+            self._pin_ch_A = pin_ch_A
+            self._pin_ch_B = pin_ch_B
+        else :
+            self._pin_ch_A = pin_ch_B
+            self._pin_ch_B = pin_ch_A
 
+        self._scale=scale
+        self._direction=direction
+        
+    def motor_off(self):
+        self._pin_ch_A.write_analog(0)
+        self._pin_ch_B.write_analog(0)
 
-#     OutputVal = Math.clamp(0, 100, speed) * 10;
+    def set_speed(self, speed_ratio):
+        speed = speed_ratio * 1024//100
+        if speed > 0:
+            self._pin_ch_A.write_analog(0)
+            self._pin_ch_B.write_analog(speed)
 
-#         switch (motor) {
-#             case Motors.Motor1: /*Motor 1 uses Pins 8 and 12*/
-#                 switch (dir) {
-#                     case MotorDirection.Forward:
-#                         pins.analogWritePin(AnalogPin.P8, OutputVal);
-#                         pins.digitalWritePin(DigitalPin.P12, 0); /*Write the low side digitally, to allow the 3rd PWM to be used if required elsewhere*/
-#                         break
-#                     case MotorDirection.Reverse:
-#                         pins.analogWritePin(AnalogPin.P12, OutputVal);
-#                         pins.digitalWritePin(DigitalPin.P8, 0);
-#                         break
-#                 }
+        elif speed < 0:
+            self._pin_ch_A.write_analog(abs(speed))
+            self._pin_ch_B.write_analog(0)
+        else:
+            self._pin_ch_A.write_analog(0)
+            self._pin_ch_B.write_analog(0)
 
-#                 break;
-#             case Motors.Motor2: /*Motor 2 uses Pins 0 and 16*/
-#                 switch (dir) {
-#                     case MotorDirection.Forward:
-#                         pins.analogWritePin(AnalogPin.P0, OutputVal);
-#                         pins.digitalWritePin(DigitalPin.P16, 0); /*Write the low side digitally, to allow the 3rd PWM to be used if required elsewhere*/
-#                         break
-#                     case MotorDirection.Reverse:
-#                         pins.analogWritePin(AnalogPin.P16, OutputVal);
-#                         pins.digitalWritePin(DigitalPin.P0, 0);
-#                         break
-#                 }
+def test():
+    
+    moteur = KitronikMotorDriver (pin8, pin12)
+    moteur.motor_off()
+    for i in range (100):
+        moteur.set_speed(i)
+        sleep(10)
 
-#                 break;
-#         }
-#     }
-# 	/**
-#      * Turns off the motor specified by eMotors
-#      * @param motor :which motor to turn off
-#      */
-#     //% blockId=kitronik_motordriver_motor_off
-#     //%block="turn off %motor"
-#     export function motorOff(motor: Motors): void {
-#         switch (motor) {
-#             case Motors.Motor1:
-#                 pins.digitalWritePin(DigitalPin.P8, 0);
-#                 pins.digitalWritePin(DigitalPin.P12, 0);
-#                 break
-#             case Motors.Motor2:
-#                 pins.digitalWritePin(DigitalPin.P0, 0);
-#                 pins.digitalWritePin(DigitalPin.P16, 0);
-#                 break
-#         }
-#     }
-# }
+    moteur.motor_off()
+    sleep(1000)
+
+    for i in range (100):
+        moteur.set_speed(-i)
+        sleep(10)
+    moteur.motor_off()
+
+if __name__=="__main__":
+    test()
