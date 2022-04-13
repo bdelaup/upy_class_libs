@@ -10,6 +10,7 @@
 
 
 from machine import Pin, I2C, SoftI2C
+from utime import *
 # i2c = I2C(1)
 
 
@@ -102,6 +103,8 @@ class DFRobot_Ozone(object):
 
   def get_ozone(self,reg):
     rslt = self.read_reg(reg ,2)
+#     print(rslt,rslt[0], (rslt[0] << 8),  rslt[1], (rslt[0] << 8) + rslt[1] )
+#     print (int.from_bytes((rslt[0] << 8) + rslt[1]))
     return ((rslt[0] << 8) + rslt[1])
 
 class DFRobot_Ozone_IIC(DFRobot_Ozone): 
@@ -127,13 +130,16 @@ COLLECT_NUMBER=20
 if __name__ == "__main__":
 #     i2c = SoftI2C(scl=Pin(20), sda=Pin(21), freq=100_000)
     
-    i2c = SoftI2C(scl=Pin(20), sda=Pin(21))
+    i2c = SoftI2C(scl=Pin(20), sda=Pin(21), freq=200000)
 #     print(i2c.scan()) # return 115 -> 0x73
+#     i2c = I2C(1, scl=Pin(7), sda=Pin(6), freq=200000)
     
     sensor = DFRobot_Ozone_IIC(i2c, OZONE_ADDRESS_3)
     sensor.set_mode(MEASURE_MODE_AUTOMATIC)
-    data = sensor.get_ozone_data(COLLECT_NUMBER)
-    print (data)
+    while True:
+        data = sensor.get_ozone_data(COLLECT_NUMBER)
+        print (data)
+        sleep_ms(1000)
         
 #         
 # # -*- coding:utf-8 -*-
