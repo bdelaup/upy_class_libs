@@ -4,16 +4,12 @@
   @brief Define the basic structure of the DFRobot_Ozone class, the implementation of the basic methods
   @copyright Copyright (c) 2010 DFRobot Co.Ltd (http://www.dfrobot.com)
   @license The MIT License (MIT)
-  @author [ZhixinLiu](zhixin.liu@dfrobot.com) & B. Delaup
+  @author [ZhixinLiu](zhixin.liu@dfrobot.com) & revised for micropython by B. Delaup tested on Rpi Pico
 
 '''
 
-
 from machine import Pin, I2C, SoftI2C
 from utime import *
-# i2c = I2C(1)
-
-
 
 OZONE_ADDRESS_0           = 0x70
 OZONE_ADDRESS_1           = 0x71
@@ -103,8 +99,6 @@ class DFRobot_Ozone(object):
 
   def get_ozone(self,reg):
     rslt = self.read_reg(reg ,2)
-#     print(rslt,rslt[0], (rslt[0] << 8),  rslt[1], (rslt[0] << 8) + rslt[1] )
-#     print (int.from_bytes((rslt[0] << 8) + rslt[1]))
     return ((rslt[0] << 8) + rslt[1])
 
 class DFRobot_Ozone_IIC(DFRobot_Ozone): 
@@ -113,86 +107,43 @@ class DFRobot_Ozone_IIC(DFRobot_Ozone):
     super(DFRobot_Ozone_IIC, self).__init__(bus)
 
   def write_reg(self, reg, data):
-      print(reg, data, bytes(data))
-      print(type(data))
       self.i2cbus.writeto_mem(self.__addr , reg, bytes(data))
-#     self.i2cbus.write_i2c_block_data(self.__addr ,reg ,data)
 
   def read_reg(self, reg ,l):
-    print (reg, l)
     rslt = self.i2cbus.readfrom_mem(self.__addr , reg, l)
-#     I2C.readfrom_mem(addr, memaddr, nbytes, *, addrsize=8)
-#     rslt = self.i2cbus.read_i2c_block_data(self.__addr ,reg ,l)
+#     print(rslt, list(rslt), (rslt[0] << 8) + rslt[1])
     return rslt
 
-COLLECT_NUMBER=20 
-
-if __name__ == "__main__":
-#     i2c = SoftI2C(scl=Pin(20), sda=Pin(21), freq=100_000)
-    
-    i2c = SoftI2C(scl=Pin(20), sda=Pin(21), freq=200000)
-#     print(i2c.scan()) # return 115 -> 0x73
-#     i2c = I2C(1, scl=Pin(7), sda=Pin(6), freq=200000)
-    
+def test1():
+    COLLECT_NUMBER=100
+    i2c = SoftI2C(scl=Pin(20), sda=Pin(21), freq=200000)          
     sensor = DFRobot_Ozone_IIC(i2c, OZONE_ADDRESS_3)
     sensor.set_mode(MEASURE_MODE_AUTOMATIC)
     while True:
         data = sensor.get_ozone_data(COLLECT_NUMBER)
-        print (data)
+        print (data, "ppb") # Particules par miliard
         sleep_ms(1000)
         
-#         
-# # -*- coding:utf-8 -*-
-# '''!
-#   @file get_ozone_data.py
-#   @brief Reading ozone concentration, A concentration of one part per billion (PPB).
-#   @n step: we must first determine the iic device address, will dial the code switch A0, A1 (OZONE_ADDRESS_0 for [0 0]), (OZONE_ADDRESS_1 for [1 0]), (OZONE_ADDRESS_2 for [0 1]), (OZONE_ADDRESS_3 for [1 1]).
-#   @n       Then configure the mode of active and passive acquisition, Finally, ozone data can be read.
-#   @n note: it takes time to stable oxygen concentration, about 3 minutes.
-#   @copyright Copyright (c) 2010 DFRobot Co.Ltd (http://www.dfrobot.com)
-#   @license The MIT License (MIT)
-#   @author [ZhixinLiu](zhixin.liu@dfrobot.com)
-#   @version V1.0
-#   @date 2020-5-27
-#   @url https://github.com/DFRobot/DFRobot_Ozone
-# '''
-# import sys
-# import time
-# sys.path.append("../")
-# from DFRobot_Ozone import *
-# 
-# COLLECT_NUMBER   = 20              # collect number, the collection range is 1-100
-# IIC_MODE         = 0x01            # default use IIC1
-# 
-# '''
-#    The first  parameter is to select i2c0 or i2c1
-#    The second parameter is the i2c device address
-#    The default address for i2c is OZONE_ADDRESS_3
-#       OZONE_ADDRESS_0        0x70
-#       OZONE_ADDRESS_1        0x71
-#       OZONE_ADDRESS_2        0x72
-#       OZONE_ADDRESS_3        0x73
-# '''
-# ozone = DFRobot_Ozone_IIC(IIC_MODE ,OZONE_ADDRESS_3)
-# '''
-#   The module is configured in automatic mode or passive
-#     MEASURE_MODE_AUTOMATIC  active  mode
-#     MEASURE_MODE_PASSIVE    passive mode
-# ''' 
-# ozone.set_mode(MEASURE_MODE_AUTOMATIC)
-# while(1):
-#   ''' Smooth data collection the collection range is 1-100 '''
-#   ozone_concentration = ozone.get_ozone_data(COLLECT_NUMBER)
-#   print("Ozone concentration is %d PPB."%ozone_concentration)
-#   time.sleep(1)
-# 
-#         
-        
-        
-        
-        
-        
-        
+def test2():
+    COLLECT_NUMBER=100
+    while True:
+        try:
+            i2c = SoftI2C(scl=Pin(20), sda=Pin(21), freq=200000)          
+            sensor = DFRobot_Ozone_IIC(i2c, OZONE_ADDRESS_3)
+            sensor.set_mode(MEASURE_MODE_AUTOMATIC)
+            while True:
+                data = sensor.get_ozone_data(COLLECT_NUMBER)
+                print (data, "ppb") # Particules par miliard
+                sleep_ms(1000)
+                
+        except Exception as e:
+            sleep_ms(1000)
+            print(e)
+
+if __name__ == "__main__":
+    test2()
+            
+               
         
         
         
