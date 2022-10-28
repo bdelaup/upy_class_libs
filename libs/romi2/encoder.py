@@ -26,7 +26,7 @@ class Encoder:
         self._pin_channel_b.init(machine.Pin.IN)
         
 
-        self._pin_channel_a.irq(trigger=sig_trigger, handler=self.signal_soft_handler)
+        self._pin_channel_a.irq(trigger=sig_trigger, handler=self.signal_hard_handler)
         
     def signal_soft_handler(self, _):
         """
@@ -35,9 +35,9 @@ class Encoder:
         """ 
         micropython.schedule(self.signal_handler, self._pin_channel_b.value())
 
-    def signal_hard_handler(self, p):
+    def signal_hard_handler(self, _):
         """ Actual implementation of interupt routine"""
-        if p == 0:
+        if self._pin_channel_b.value() == 0:
             self._counter -= self._dir        
         else :
             self._counter += self._dir

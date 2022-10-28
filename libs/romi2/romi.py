@@ -30,50 +30,7 @@ class Controller:
         self._print_speed_av = 0
         
         self._loop_status = None
-        
-#         self._display_freq = 10
-#     def position_loop(self, order_generator):
-#         ticks_start = ticks_ms()
-# 
-#         #dry run
-#         t =  (ticks_ms() - ticks_start) / 1000 # ms -> s
-#         self._pid.order = order_generator(t)
-#         
-#         while(self._pid.order != None):
-#             
-#             position = self._enc._counter
-#             self._pid.set_signal(position)
-#             cmd = self._pid.get_filtered_signal()
-#                         
-#             if cmd >= 0:
-#                 self._mot.on(Motor.MotorDirection.FORWARD, min(cmd,100))
-#             else :
-#                 self._mot.on(Motor.MotorDirection.REVERSE, min(abs(cmd),100))
-#             
-# 
-#             t =  (ticks_ms() - ticks_start) / 1000 # ms -> s
-#             self._pid.order = order_generator(t)
-#             
-#             
-#         self._mot.off()
-        
-#     def speed_step(self, ticks_start_us, set_point_generator):
-#             position = self._enc._counter
-#             self._pid.set_signal(position)
-#             cmd = self._pid.get_filtered_signal()
-#                         
-#             if cmd >= 0:
-#                 self._mot.on(Motor.MotorDirection.FORWARD, min(cmd,100))
-#             else :
-#                 self._mot.on(Motor.MotorDirection.REVERSE, min(abs(cmd),100))
-#             
-# 
-#             t =  (ticks_ms() - ticks_start) / 1000 # ms -> s
-#             self._pid.order = order_generator(t)
-#             if self._pid.order == None:
-#                 return False
-#             else :
-#                 return True
+    
             
     def print_timer_soft_handler(self, p):
         """
@@ -96,24 +53,13 @@ class Controller:
                    
             )
             
-    def speed_step_timer_soft_handler(self, p):
-        """
-        First called by interrupt, then schedule the interrupt handler
-        asap to avoid allocation problem in IRQ
-        """ 
-        micropython.schedule(self.speed_step, None)
         
     def speed_loop(self, set_point_generator):
         # Manage printing
         print_timer = Timer( period=100, mode=Timer.PERIODIC, callback=self.print_timer_soft_handler)
         
         # Warm up variables
-        self._ticks_start_us = ticks_us()
-        self._last_angular_speed_deg_s=0
-        self._last_time_us = self._ticks_start_us -1
-        
-        self._last_position = self._enc._counter
-        self._set_point_generator = set_point_generator
+        self.warmup(set_point_generator)
 
         # Loop timer
         while self.speed_step() != False:            
@@ -121,8 +67,16 @@ class Controller:
 
         print_timer.deinit()
         self._mot.off()
+    
+    def warmup(self, set_point_generator):
+        self._ticks_start_us = ticks_us()
+        self._last_angular_speed_deg_s=0
+        self._last_time_us = self._ticks_start_us -1
+        
+        self._last_position = self._enc._counter
+        self._set_point_generator = set_point_generator
             
-    def speed_step(self, _ = None):
+    def speed_step(self):
         # Get current values
         current_position = self._enc._counter
         current_time_us =  ticks_us() - self._ticks_start_us
@@ -161,66 +115,37 @@ class Controller:
 
         return True
             
-class ControlerMultiChannel:
-    def __init__(self, ch1, ch2):
-        self._ch1 = ch1
-        self._ch2 = ch2
-    
-#     def position_loop(self, set_point_generator_ch1, set_point_generator_ch2):
-#         ticks_start = ticks_ms()
-#         ret1 = True
-#         ret2 = True
-#         while (ret1==True and ret2==True):
-# #         while (ret1 == True):
-#             ret1 = self._ch1.position_step(ticks_start, set_point_generator_ch1)
-#             ret2 = self._ch2.position_step(ticks_start, set_point_generator_ch2)
-#             sleep_ms(10)
-# #             print ("Ret loop 1 : ", ret1, "Ret loop 2 : ", ret2)
-#         
-    def speed_loop(self, set_point_generator_ch1, set_point_generator_ch2):
-        ticks_start_us = ticks_us()
+class DualChannelController:
+    def __init__(self, left_channel, right_channel):
+        self._lch = left_channel
+        self._rch = right_channel
         
-        self._ch1.speed_warmup(ticks_start_us, set_point_generator_ch1)
-        self._ch2.speed_warmup(ticks_start_us, set_point_generator_ch2)
+    def print_timer_cb(self, _):
+        self._lch.print_timer_soft_handler(None)
+        self._rch.print_timer_soft_handler(None)
         
-        ret1 = True
-        ret2 = True
+    def speed_loop(self, set_point_generator_lch, set_point_generator_rch):
+        # Manage printing
+        print_timer = Timer( period=100, mode=Timer.PERIODIC, callback=self.print_timer_cb)
 
-        while (ret1==True and ret2==True):
-            
-            ret1 = self._ch1.speed_step(ticks_start_us, set_point_generator_ch1)
-            ret2 = self._ch2.speed_step(ticks_start_us, set_point_generator_ch2)
+        # Warm up variables
+        self._lch.warmup(set_point_generator_lch)
+        self._rch.warmup(set_point_generator_rch)
+        
+        # Main loop
+        rret = True
+        lret = True
+        while (rret==True and lret==True):
+            sleep_ms(1)
+            rret = self._lch.speed_step()
+            sleep_ms(1)
+            lret = self._rch.speed_step()
 
+        self._lch._mot.off()
+        self._rch._mot.off()
+        print_timer.deinit()
 
-
-
-# def test_asservissement_ch2():
-#     pin_ch_a = Pin(21)
-#     pin_ch_b = Pin(20)
-#     encoder = Encoder(pin_ch_a, pin_ch_b,reverse_direction = False)
-
-#     pin_dir = Pin(6)
-#     pin_speed = Pin(7)
-#     motor = Motor(pin_dir, pin_speed,reverse_sense=True)
-#     motor.off()
-
-#     Kp = 1
-#     Ki = 0
-#     Kd = 0
-#     filter_ = Filter(Kp)
-
-#     Controller = Controller(encoder, motor, filter_)
-
-#     ramp_inc = generate_ramp(0, 100, 4)
-#     plateau = generate_plateau(400,2)
-#     ramp_dec = generate_ramp(400, -100, 4)
-
-#     Controller.position_loop(ramp_inc)
-#     Controller.position_loop(plateau)
-#     Controller.position_loop(ramp_dec)
-#     motor.off()
-
-def test_asservissement_ch2_speed():
+def test_asservissement_ch2_right_speed():
     
     pin_ch_a = Pin(21)
     pin_ch_b = Pin(20)
@@ -243,6 +168,71 @@ def test_asservissement_ch2_speed():
     controller.speed_loop(plateau)
     controller.speed_loop(ramp_dec)
     
+def test_asservissement_ch1_left_speed():
+    
+    pin_ch_a = Pin(18)
+    pin_ch_b = Pin(19)
+    encoder = Encoder(pin_ch_a, pin_ch_b,reverse_direction = True)
+
+    pin_dir = Pin(8)
+    pin_speed = Pin(9)
+    motor = Motor(pin_dir, pin_speed,reverse_sense=True)
+    motor.off()
+
+    filter = Filter3(kp=0.5, ki = 0.05, kd = 0.0001, average_nb_values = 2)
+
+    controller = Controller(encoder, motor, filter)
+
+    ramp_inc = generate_ramp(0, 20, 15)
+    plateau = generate_plateau(300,5)
+    ramp_dec = generate_ramp(300, -300, 1)
+
+    controller.speed_loop(ramp_inc)
+    controller.speed_loop(plateau)
+    controller.speed_loop(ramp_dec)
+
+
+def test_asservissement_ch1ch2_speed():
+    # Left wheel
+    l_pin_ch_a = Pin(18)
+    l_pin_ch_b = Pin(19)
+    l_encoder = Encoder(l_pin_ch_a, l_pin_ch_b,reverse_direction = True)
+    
+    l_pin_dir = Pin(8)
+    l_pin_speed = Pin(9)
+    l_motor = Motor(l_pin_dir, l_pin_speed,reverse_sense=True)
+    l_motor.off()
+
+    l_filter = Filter3(kp=0.5, ki = 0.05, kd = 0.0001, average_nb_values = 2)
+
+    l_controller = Controller(l_encoder, l_motor, l_filter)
+    
+    # Right wheel
+    r_pin_ch_a = Pin(21)
+    r_pin_ch_b = Pin(20)
+    r_encoder = Encoder(r_pin_ch_a, r_pin_ch_b,reverse_direction = False)
+    
+    r_pin_dir = Pin(6)
+    r_pin_speed = Pin(7)
+    r_motor = Motor(r_pin_dir, r_pin_speed,reverse_sense=True)
+    r_motor.off()
+
+    r_filter = Filter3(kp=0.5, ki = 0.05, kd = 0.0001, average_nb_values = 2)
+
+    r_controller = Controller(r_encoder, r_motor, r_filter)
+    
+    # Both wheels
+    lr_controller = DualChannelController(l_controller, r_controller)
+    
+    
+    ramp_inc = generate_ramp(0, 20, 15)
+    plateau = generate_plateau(50,5)
+    ramp_dec = generate_ramp(50, -50, 1)    
+
+    lr_controller.speed_loop(ramp_inc, ramp_inc)
+    lr_controller.speed_loop(plateau, plateau)
+    lr_controller.speed_loop(ramp_dec, ramp_dec)
+    
 def test_encoder2():
     pin_channnel_a=machine.Pin(21)
     pin_channnel_b=machine.Pin(20)
@@ -264,11 +254,55 @@ def emergency_stop():
     motor.off()
     sleep_ms(1000)
 
+class Romi:
+    def __init__(self, kp_in=0.5, ki_in = 0.05, kd_in = 0.0001):
+        # Left wheel
+        l_pin_ch_a = Pin(18)
+        l_pin_ch_b = Pin(19)
+        l_encoder = Encoder(l_pin_ch_a, l_pin_ch_b,reverse_direction = True)
+        
+        l_pin_dir = Pin(8)
+        l_pin_speed = Pin(9)
+        l_motor = Motor(l_pin_dir, l_pin_speed,reverse_sense=True)
+        l_motor.off()
 
+        l_filter = Filter3(kp=kp_in, ki = ki_in, kd = kd_in, average_nb_values = 2)
+
+        l_controller = Controller(l_encoder, l_motor, l_filter)
+        
+        # Right wheel
+        r_pin_ch_a = Pin(21)
+        r_pin_ch_b = Pin(20)
+        r_encoder = Encoder(r_pin_ch_a, r_pin_ch_b,reverse_direction = False)
+        
+        r_pin_dir = Pin(6)
+        r_pin_speed = Pin(7)
+        r_motor = Motor(r_pin_dir, r_pin_speed,reverse_sense=True)
+        r_motor.off()
+
+        r_filter = Filter3(kp_in, ki = ki_in, kd = kd_in, average_nb_values = 2)
+
+        r_controller = Controller(r_encoder, r_motor, r_filter)
+        
+        # Both wheels
+        self.lr_controller = DualChannelController(l_controller, r_controller)
+        
+    def move(self, l_set_point, r_set_point):
+        self.lr_controller.speed_loop(l_set_point, r_set_point)
+
+        
     
 if __name__=="__main__":
     emergency_stop()
-#     test_encoder2()
-#     test_circular_buffer()
-    test_asservissement_ch2_speed()
-    # test_asservissement_ch2()
+#     test_asservissement_ch2_right_speed()
+#     test_asservissement_ch1_left_speed()
+#     test_asservissement_ch1ch2_speed()
+    robot = Romi()
+    
+    ramp_inc = generate_ramp(0, 20, 15)
+    plateau = generate_plateau(300,5)
+    ramp_dec = generate_ramp(300, -300, 1)
+    
+    robot.move(ramp_inc, ramp_inc)
+    robot.move(plateau, plateau)
+    robot.move(ramp_dec, ramp_dec)
