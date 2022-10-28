@@ -152,5 +152,5 @@ def test_filter_d():
 
 if __name__ == "__main__" :
     test_filter_p()
-    test_filter_i()
-    test_filter_d()
+#     test_filter_i()
+#     test_filter_d()

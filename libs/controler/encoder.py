@@ -144,7 +144,7 @@ def test_encoder2():
         sleep_ms(100)
 
 if __name__=="__main__":
-    test_soft_encoder()
-    test_soft_encoder_speed1()
-#     test_encoder1()
-    test_encoder2()
+#     test_soft_encoder()
+#     test_soft_encoder_speed1()
+    test_encoder1()
+#     test_encoder2()
