@@ -1,5 +1,5 @@
 import machine
-from romi import Encoder, Motor, Controller
+from romi import Encoder, Motor, Controller, Romi
 from time import sleep_ms
 
 def test_motor_stop():
@@ -92,8 +92,55 @@ def test_circular_buffer():
         buf.push(i)
         print (buf.average)
     print(buf.buffer)
+    
+    
+def test_contact():
+    robot = Romi()
+    while(True):
+        print("L : ", robot.left_contact_state(), "R : ", robot.right_contact_state())
+        sleep_ms(1000)
+    
+def test_command():
+    robot = Romi()
+    speed = 20
+    robot.right_wheel_command(speed)
+    robot.left_wheel_command(speed)
+    sleep_ms(1000)
+    robot.right_wheel_command(0)
+    robot.left_wheel_command(0)
+    sleep_ms(1000)
+    robot.right_wheel_command(-speed)
+    robot.left_wheel_command(-speed)
+    sleep_ms(1000)
+    robot.right_wheel_command(0)
+    robot.left_wheel_command(0)
+    
+    
+def test_detection():
+    robot = Romi()
+    speed = 20
+    while (True):
+        r_c = robot.left_contact_state()
+        l_c = robot.right_contact_state()
+        if r_c == False and l_c == False:
+            robot.right_wheel_command(speed)
+            robot.left_wheel_command(speed)            
+        if r_c == True :
+            robot.right_wheel_command(speed)
+            robot.left_wheel_command(-speed)
+            sleep_ms(1000)
+        elif l_c == True :
+            robot.right_wheel_command(-speed)
+            robot.left_wheel_command(speed)
+            sleep_ms(1000)
+        
+        sleep_ms(10)
+            
+    
 
 if __name__=="__main__":
-
+    test_detection()
+    test_command()
+    test_contact()
     test_motor_stop()
     test_encoder1()

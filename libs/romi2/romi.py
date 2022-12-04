@@ -255,43 +255,78 @@ def emergency_stop():
     sleep_ms(1000)
 
 class Romi:
-    def __init__(self, kp_in=0.5, ki_in = 0.05, kd_in = 0.0001):
+    def __init__(self, kp_in=0.5, ki_in = 0.05, kd_in = 0.0001, l_contact = 27, r_contact = 28):
         # Left wheel
         l_pin_ch_a = Pin(18)
         l_pin_ch_b = Pin(19)
-        l_encoder = Encoder(l_pin_ch_a, l_pin_ch_b,reverse_direction = True)
+        self.l_encoder = Encoder(l_pin_ch_a, l_pin_ch_b,reverse_direction = True)
         
         l_pin_dir = Pin(8)
         l_pin_speed = Pin(9)
-        l_motor = Motor(l_pin_dir, l_pin_speed,reverse_sense=True)
-        l_motor.off()
+        self.l_motor = Motor(l_pin_dir, l_pin_speed,reverse_sense=True)
+        self.l_motor.off()
 
         l_filter = Filter3(kp=kp_in, ki = ki_in, kd = kd_in, average_nb_values = 2)
 
-        l_controller = Controller(l_encoder, l_motor, l_filter)
+        l_controller = Controller(self.l_encoder, self.l_motor, l_filter)
         
         # Right wheel
         r_pin_ch_a = Pin(21)
         r_pin_ch_b = Pin(20)
-        r_encoder = Encoder(r_pin_ch_a, r_pin_ch_b,reverse_direction = False)
+        self.r_encoder = Encoder(r_pin_ch_a, r_pin_ch_b,reverse_direction = False)
         
         r_pin_dir = Pin(6)
         r_pin_speed = Pin(7)
-        r_motor = Motor(r_pin_dir, r_pin_speed,reverse_sense=True)
-        r_motor.off()
+        self.r_motor = Motor(r_pin_dir, r_pin_speed,reverse_sense=True)
+        self.r_motor.off()
 
         r_filter = Filter3(kp_in, ki = ki_in, kd = kd_in, average_nb_values = 2)
 
-        r_controller = Controller(r_encoder, r_motor, r_filter)
+        r_controller = Controller(self.r_encoder, self.r_motor, r_filter)
         
         # Both wheels
         self.lr_controller = DualChannelController(l_controller, r_controller)
         
+        # Contact        
+        self.l_contact = Pin(l_contact, Pin.IN, Pin.PULL_DOWN)     
+        self.r_contact = Pin(r_contact, Pin.IN, Pin.PULL_DOWN)
+        
+    # Asservissement
     def move(self, l_set_point, r_set_point):
         self.lr_controller.speed_loop(l_set_point, r_set_point)
+               
+    def right_wheel_command(self, s):
+        if s == 0:
+            self.r_motor.off()
+#             print("s = 0")
+        elif s > 0 :
+#             print("s > 0", s)
+            self.r_motor.on(Motor.MotorDirection.FORWARD,s)
+        else :
+#             print("s < 0", s, -s)
+            self.r_motor.on(Motor.MotorDirection.REVERSE,-s)
+            
+    def left_wheel_command(self, s):
+        if s == 0:
+            self.l_motor.off()        
+        elif s > 0 :   
+            self.l_motor.on(Motor.MotorDirection.FORWARD,s)
+        else :
+            self.l_motor.on(Motor.MotorDirection.REVERSE,-s)
+
+    def left_contact_state(self):        
+        return self.l_contact.value() == 1
+    
+    def right_contact_state(self):
+        return self.r_contact.value() == 1
+    
+    def left_coder_position(self):
+        return self.l_encoder.counter
+    
+    def right_coder_position(self):
+        return self.r_encoder.counter
 
         
-    
 if __name__=="__main__":
     emergency_stop()
 #     test_asservissement_ch2_right_speed()
